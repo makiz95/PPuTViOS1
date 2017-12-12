@@ -51,6 +51,7 @@ RemoteControllerError unregisterRemoteControllerCallback(RemoteControllerCallbac
     
 	// TODO: implement
 	callback == NULL;
+	return RC_NO_ERROR;
 }
 
 void* inputEventTask()
@@ -93,7 +94,7 @@ void* inputEventTask()
 			printf("\n");
             
             /* TODO: trigger remote controller callback */
-		callback(eventBuf.type,eventBuf.code,eventBuf.value);
+		callback(eventBuf.code,eventBuf.type,eventBuf.value);
            
 		}
     }
