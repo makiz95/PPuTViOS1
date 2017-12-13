@@ -1,5 +1,6 @@
 #include "stream_controller.h"
 
+
 static PatTable *patTable;
 static PmtTable *pmtTable;
 static pthread_cond_t statusCondition = PTHREAD_COND_INITIALIZER;
@@ -27,6 +28,10 @@ static pthread_mutex_t demuxMutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void* streamControllerTask();
 static void startChannel(int32_t channelNumber);
+
+char *filename = "config.ini";
+
+
 
 
 StreamControllerError streamControllerInit()
@@ -386,4 +391,26 @@ int32_t tunerStatusCallback(t_LockStatus status)
         printf("\n%s -----TUNER NOT LOCKED-----\n",__FUNCTION__);
     }
     return 0;
+}
+
+
+int32_t openFile(filename)
+{
+	char red[50];
+	char znak_za_parsiranje[2] = ":";
+	FILE *file;
+	file = fopen("config.ini", "r");
+	char c;
+	if( (file=fopen("config.ini","r")) == NULL )
+	{
+		printf("Datoteka <%s> nije uspesno otvorena.");
+		return -1;
+	}
+	
+	while(fgets(red,50,file) != NULL)
+		puts(red);
+		printf("\n>>Kraj sadrzaja datoteke <%s>...\n", "config.ini");
+
+	fclose(file);
+	return 0;
 }

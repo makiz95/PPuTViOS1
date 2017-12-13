@@ -54,8 +54,9 @@ int main()
 
     /* deinitialize stream controller module */
     ERRORCHECK(streamControllerDeinit());
-  
+
     return 0;
+
 }
 
 //proziva se kada stigne neki kod
