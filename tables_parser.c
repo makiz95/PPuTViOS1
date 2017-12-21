@@ -323,6 +323,8 @@ ParseErrorCode parseTdtTable(const uint8_t* tdtSectionBuffer, TdtTable* tdtTable
 	all16Bits = (uint16_t) ((higher8Bits << 8) + lower8Bits);
 	tdtTable->MJD = all16Bits;
 
+
+/*
 	lower8Bits = (uint8_t) *(tdtSectionBuffer + 5);
 	tdtTable->hours = 16*(lower8Bits >> 4) + (lower8Bits & 0x0F);
 
@@ -331,7 +333,7 @@ ParseErrorCode parseTdtTable(const uint8_t* tdtSectionBuffer, TdtTable* tdtTable
 
 	lower8Bits = (uint8_t) *(tdtSectionBuffer + 7);
 	tdtTable->seconds = 16*(lower8Bits >> 4) + (lower8Bits & 0x0F);
-
+*/
 	return TABLES_PARSE_OK;
 }
 
