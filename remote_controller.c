@@ -5,11 +5,10 @@ static void* inputEventTask();
 static int32_t getKey(uint8_t* buf);
 static pthread_t remote;
 static uint8_t threadExit = 0;
-static RemoteControllerCallback callback = NULL; //tip  pokazivac na callback promenljiva
+static RemoteControllerCallback callback = NULL;
 
 RemoteControllerError remoteControllerInit()
 {
-
     /* handle input events in background process*/
     if (pthread_create(&remote, NULL, &inputEventTask, NULL))
     {
@@ -34,23 +33,23 @@ RemoteControllerError remoteControllerDeinit()
 
 RemoteControllerError registerRemoteControllerCallback(RemoteControllerCallback remoteControllerCallback)
 {
-    // TODO: implement 
-	if (remoteControllerCallback == NULL) //provera da nije prazno tj zastita
+	if (remoteControllerCallback == NULL)
 	{
+		printf("Error registring callback!\n");
 		return RC_ERROR;
 	}
 	else
 	{
-		callback = remoteControllerCallback; //sacuvali callback
+		printf("Remote callback function registered!\n");
+		callback = remoteControllerCallback;
 		return RC_NO_ERROR;
-
 	}
 }
+
 RemoteControllerError unregisterRemoteControllerCallback(RemoteControllerCallback remoteControllerCallback)
 {
-    
-	// TODO: implement
-	callback == NULL;
+	callback = NULL;
+
 	return RC_NO_ERROR;
 }
 
@@ -93,8 +92,7 @@ void* inputEventTask()
 			printf("Event value: %d\n",eventBuf.value);
 			printf("\n");
             
-            /* TODO: trigger remote controller callback */
-		callback(eventBuf.code,eventBuf.type,eventBuf.value);
+            callback(eventBuf.code, eventBuf.type, eventBuf.value);
            
 		}
     }
@@ -115,6 +113,3 @@ int32_t getKey(uint8_t* buf)
     
     return RC_NO_ERROR;
 }
-
-
-

@@ -13,6 +13,7 @@
 
 #define DESIRED_FREQUENCY 754000000	        /* Tune frequency in Hz */
 #define BANDWIDTH 8    				        /* Bandwidth in Mhz */
+#define LINE_LENGTH 100						/* Max line length in config file */
 
 /**
  * @brief Structure that defines stream controller error
@@ -33,6 +34,17 @@ typedef struct _ChannelInfo
     int16_t audioPid;
     int16_t videoPid;
 }ChannelInfo;
+
+/**
+ * @brief Structure that holds initial info
+ */
+typedef struct _InitialInfo
+{
+	uint32_t tuneFrequency;
+	uint32_t tuneBandwidth;
+	uint32_t programNumber;
+	t_Module tuneModule;
+}InitialInfo;
 
 /**
  * @brief Initializes stream controller module
@@ -69,5 +81,17 @@ StreamControllerError channelDown();
  * @return stream controller error code
  */
 StreamControllerError getChannelInfo(ChannelInfo* channelInfo);
+
+/**
+ * @brief Loads config.ini file holding initial info
+ *
+ * @return stream conotroller error code
+ */
+StreamControllerError loadInitialInfo();
+
+/**
+ * @brief 
+ */
+void changeChannelKey(int32_t channelNumber);
 
 #endif /* __STREAM_CONTROLLER_H__ */

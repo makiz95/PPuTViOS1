@@ -14,6 +14,17 @@
 #define KEYCODE_P_PLUS 62
 #define KEYCODE_P_MINUS 61
 #define KEYCODE_INFO 358
+#define KEYCODE_1 2
+#define KEYCODE_2 3
+#define KEYCODE_3 4
+#define KEYCODE_4 5
+#define KEYCODE_5 6
+#define KEYCODE_6 7
+#define KEYCODE_7 8
+#define KEYCODE_8 9
+#define KEYCODE_9 10
+#define KEYCODE_0 11
+#define KEYCODE_MUTE 60
 
 /* input event values for 'EV_KEY' type */
 #define EV_VALUE_RELEASE    0
@@ -33,10 +44,6 @@ typedef enum _RemoteControllerError
 /**
  * @brief Remote controller callback
  */
-/*
-da ne bi koristili void koristimo typedef 
-imamo pokazivac na void
-*/
 typedef void(*RemoteControllerCallback)(uint16_t code, uint16_t type, uint32_t value);
 
 /*
@@ -59,9 +66,6 @@ RemoteControllerError remoteControllerDeinit();
  * @param  [in] remote controller callback - pointer to remote controller callback function
  * @return remote controller error code
  */
-
-
-/*u 36 liniji odradjen typedef */
 RemoteControllerError registerRemoteControllerCallback(RemoteControllerCallback remoteControllerCallback);
 
 /*

@@ -1,6 +1,5 @@
 #include "stream_controller.h"
 
-
 static PatTable *patTable;
 static PmtTable *pmtTable;
 static pthread_cond_t statusCondition = PTHREAD_COND_INITIALIZER;
@@ -9,14 +8,14 @@ static pthread_mutex_t statusMutex = PTHREAD_MUTEX_INITIALIZER;
 static int32_t sectionReceivedCallback(uint8_t *buffer);
 static int32_t tunerStatusCallback(t_LockStatus status);
 
-static uint32_t playerHandle = 0;
-static uint32_t sourceHandle = 0;
+static uint32_t  playerHandle = 0;
+static uint32_t  sourceHandle = 0;
 static uint32_t streamHandleA = 0;
 static uint32_t streamHandleV = 0;
-static uint32_t filterHandle = 0;
-static uint8_t threadExit = 0;
+static uint32_t  filterHandle = 0;
+static uint8_t     threadExit = 0;
 static bool changeChannel = false;
-static int16_t programNumber = 0;
+static int16_t  programNumber = 0;
 static ChannelInfo currentChannel;
 static bool isInitialized = false;
 
@@ -27,12 +26,11 @@ static pthread_cond_t demuxCond = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t demuxMutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void* streamControllerTask();
+static void removeWhiteSpaces(char* string);
 static void startChannel(int32_t channelNumber);
+static StreamControllerError loadConfigFile(char* filename, InitialInfo* configInfo);
 
-char *filename = "config.ini";
-
-
-
+static InitialInfo configFile;
 
 StreamControllerError streamControllerInit()
 {
@@ -143,12 +141,11 @@ StreamControllerError getChannelInfo(ChannelInfo* channelInfo)
  */
 void startChannel(int32_t channelNumber)
 {
-    
     /* free PAT table filter */
     Demux_Free_Filter(playerHandle, filterHandle);
     
     /* set demux filter for receive PMT table of program */
-    if(Demux_Set_Filter(playerHandle, patTable->patServiceInfoArray[channelNumber + 1].pid, 0x02, &filterHandle))
+    if(Demux_Set_Filter(playerHandle, patTable->patServiceInfoArray[channelNumber + 1].pid, 0x02, &filterHandle))  // on 0-info, +1 to skip info
 	{
 		printf("\n%s : ERROR Demux_Set_Filter() fail\n", __FUNCTION__);
         return;
@@ -216,7 +213,7 @@ void startChannel(int32_t channelNumber)
     }
     
     /* store current channel info */
-    currentChannel.programNumber = channelNumber + 1;
+    currentChannel.programNumber = channelNumber + 1; 
     currentChannel.audioPid = audioPid;
     currentChannel.videoPid = videoPid;
 }
@@ -260,13 +257,13 @@ void* streamControllerTask()
 	}
     
     /* lock to frequency */
-    if(!Tuner_Lock_To_Frequency(DESIRED_FREQUENCY, BANDWIDTH, DVB_T))
+    if(!Tuner_Lock_To_Frequency(configFile.tuneFrequency, configFile.tuneBandwidth, configFile.tuneModule))
     {
-        printf("\n%s: INFO Tuner_Lock_To_Frequency(): %d Hz - success!\n",__FUNCTION__,DESIRED_FREQUENCY);
+        printf("\n%s: INFO Tuner_Lock_To_Frequency(): %d Hz - success!\n",__FUNCTION__, configFile.tuneFrequency);
     }
     else
     {
-        printf("\n%s: ERROR Tuner_Lock_To_Frequency(): %d Hz - fail!\n",__FUNCTION__,DESIRED_FREQUENCY);
+        printf("\n%s: ERROR Tuner_Lock_To_Frequency(): %d Hz - fail!\n",__FUNCTION__, configFile.tuneFrequency);
         free(patTable);
         free(pmtTable);
         Tuner_Deinit();
@@ -393,24 +390,108 @@ int32_t tunerStatusCallback(t_LockStatus status)
     return 0;
 }
 
-
-int32_t openFile(filename)
+StreamControllerError loadInitialInfo()
 {
-	char red[50];
-	char znak_za_parsiranje[2] = ":";
-	FILE *file;
-	file = fopen("config.ini", "r");
-	char c;
-	if( (file=fopen("config.ini","r")) == NULL )
+	if (loadConfigFile("config.ini", &configFile))
 	{
-		printf("Datoteka <%s> nije uspesno otvorena.");
-		return -1;
+		printf("ERROR loading configuration file!\n");
+		return SC_ERROR;
 	}
-	
-	while(fgets(red,50,file) != NULL)
-		puts(red);
-		printf("\n>>Kraj sadrzaja datoteke <%s>...\n", "config.ini");
 
-	fclose(file);
-	return 0;
+	programNumber = configFile.programNumber;
+
+	return SC_NO_ERROR;
+}
+
+static StreamControllerError loadConfigFile(char* filename, InitialInfo* configInfo)
+{
+	FILE* inputFile;
+	char singleLine[LINE_LENGTH];
+	char* singleWord;
+
+	if ((inputFile = fopen(filename, "r")) == NULL)
+	{
+		printf("Error opening init file!\n");
+		return SC_ERROR;
+	}
+
+	while (fgets(singleLine, LINE_LENGTH, inputFile) != NULL)
+	{
+		singleWord = strtok(singleLine, "-");
+
+		removeWhiteSpaces(singleWord);
+
+		if (strcmp(singleWord, "frequency") == 0)
+		{
+			singleWord = strtok(NULL, "-");
+			removeWhiteSpaces(singleWord);
+			configInfo->tuneFrequency = atoi(singleWord);
+		}
+		else if (strcmp(singleWord, "bandwidth") == 0)
+		{
+			singleWord = strtok(NULL, "-");
+			removeWhiteSpaces(singleWord);
+			configInfo->tuneBandwidth = atoi(singleWord);
+		}
+		else if (strcmp(singleWord, "module") == 0)
+		{
+			singleWord = strtok(NULL, "-");
+			removeWhiteSpaces(singleWord);
+
+			if (strcmp(singleWord, "DVB_T"))
+			{
+				configInfo->tuneModule = DVB_T;
+			}
+			else
+			{
+				printf("DTV standard not supported!\n");
+				return SC_ERROR;
+			}
+		}
+		else if (strcmp(singleWord, "program_number") == 0)
+		{
+			singleWord = strtok(NULL, "-");
+			removeWhiteSpaces(singleWord);
+			configInfo->programNumber = atoi(singleWord);
+		}
+	}
+
+	fclose(inputFile);
+
+	return SC_NO_ERROR;
+}
+
+static void removeWhiteSpaces(char* word)
+{
+	int stringLen = strlen(word);
+	int i = 0;
+	int j = 0;
+	int k = stringLen - 1;
+	char* startString = word;
+	char* returnString;
+
+	while (startString[i] == 32)
+	{
+		i++;
+	}
+
+	while ((startString[k] == 32) & (startString[k] != '\0'))
+	{
+		k--;
+	}
+
+	for (j = 0; j < (k - i); j++)
+	{
+		word[j] = startString[j+i];
+	}
+
+	word[k-i+1] = '\0';
+}
+
+void changeChannelKey(int32_t channelNumber)
+{
+	if ((channelNumber > -1) && (channelNumber < patTable->serviceInfoCount))
+	{
+		startChannel(channelNumber);
+	}
 }
