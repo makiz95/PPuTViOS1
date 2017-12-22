@@ -284,8 +284,8 @@ StreamControllerError parseTimeTables()
 
 	if (totTable->descriptors[0].ltoInfo[0].localTimeOffsetPolarity == 0)
 	{
-		startTime.hours = tdtTable->hours + 10*offsetHoursFirstDigit + offsetHoursSecondDigit;
-		startTime.minutes = tdtTable->minutes + 10*offsetMinutesFirstDigit + offsetMinutesSecondDigit;
+		//startTime.hours = tdtTable->hours + 10*offsetHoursFirstDigit + offsetHoursSecondDigit;
+		//startTime.minutes = tdtTable->minutes + 10*offsetMinutesFirstDigit + offsetMinutesSecondDigit;
 
 		if (startTime.hours > 0x17)
 		{
@@ -318,7 +318,7 @@ StreamControllerError parseTimeTables()
 		}
 	}
 
-	startTime.seconds = tdtTable->seconds;
+	//startTime.seconds = tdtTable->seconds;
 	startTime.timeStampSeconds = tempTime.tv_sec;
 
 	printf("TIME TABLE PARSED!\n");
