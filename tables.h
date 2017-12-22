@@ -98,10 +98,12 @@ typedef struct _TdtTable
 	uint8_t tableId;
 	uint8_t sectionSyntaxIndicator;
 	uint16_t sectionLength;
-	uint16_t MJD;
-	uint8_t year;
-	uint8_t month;
-	uint8_t day;
+	uint64_t MJD;
+	uint16_t tmpYear;
+	uint16_t Year;
+	uint16_t tmpMonth;
+	uint16_t day;
+	uint8_t K;
 }TdtTable;
 
 /**
