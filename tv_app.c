@@ -29,6 +29,7 @@ void printCurrentTime();
 
 static void registerCurrentTime(TimeStructure* timeStructure);
 static void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value);
+static void registerCurrentVolume(uint8_t volumeValue);
 static pthread_cond_t deinitCond = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t deinitMutex = PTHREAD_MUTEX_INITIALIZER;
 static ChannelInfo channelInfo;
@@ -43,9 +44,14 @@ static struct sigevent signalEvent;
 static int32_t timerFlags = 0;
 
 static TimeStructure startTime;
+static bool timeRecieved = false;
+TimeStructure currentTime;
+
+static uint8_t currentVolume = 5;
 
 
-int main()
+
+int main(int argc, char *argv[])
 {
 	signalEvent.sigev_notify = SIGEV_THREAD;
 	signalEvent.sigev_notify_function = changeChannel;
@@ -56,6 +62,8 @@ int main()
 	memset(&timerSpec, 0, sizeof(timerSpec));
 	timerSpec.it_value.tv_sec = 2;
 	timerSpec.it_value.tv_nsec = 0;
+
+	currentTime.hours = 30;
 
 	/* load initial info from config.ini file */
 	if (loadInitialInfo())
@@ -73,11 +81,14 @@ int main()
 	/* register time callback */
 	ERRORCHECK(registerTimeCallback(registerCurrentTime));
 
-	/* initialize graphics controller module */
-	//ERRORCHECK(graphicsControllerInit());
+	/* register volume callback */
+	ERRORCHECK(registerVolumeCallback(registerCurrentVolume));
 
     /* initialize stream controller module */
     ERRORCHECK(streamControllerInit());
+
+	/* initialize graphics controller module */
+	ERRORCHECK(graphicsControllerInit());
 
     /* wait for a EXIT remote controller key press event */
     pthread_mutex_lock(&deinitMutex);
@@ -86,13 +97,7 @@ int main()
 		printf("\n%s : ERROR Lock timeout exceeded!\n", __FUNCTION__);
 	}
 	pthread_mutex_unlock(&deinitMutex);
-
-	timer_delete(keyTimer);
-
-	/* deinitialize graphics controller module */
-	//ERRORCHECK(graphicsControllerDeinit());
-
-	//printf("Grafika deinit\n");
+    
     
     /* unregister remote controller callback */
     ERRORCHECK(unregisterRemoteControllerCallback(remoteControllerCallback));
@@ -103,6 +108,7 @@ int main()
     /* deinitialize stream controller module */
     ERRORCHECK(streamControllerDeinit());
   
+timer_delete(keyTimer);
     return 0;
 }
 
@@ -121,14 +127,35 @@ void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value)
                 printf("**********************************************************\n");
             }
 			printCurrentTime();
+			drawInfoRect(currentTime.hours, currentTime.minutes, channelInfo.audioPid, channelInfo.videoPid);
 			break;
 		case KEYCODE_P_PLUS:
 			printf("\nCH+ pressed\n");
             channelUp();
+			drawProgramNumber();
 			break;
 		case KEYCODE_P_MINUS:
 		    printf("\nCH- pressed\n");
             channelDown();
+			break;
+		case KEYCODE_V_PLUS:
+			printf("\nV+ pressed\n");
+			volumeUp();
+			printf("\nCurrent volume : %d\n", currentVolume);
+			drawVolumeBar(currentVolume);
+			break;
+		case KEYCODE_V_MINUS:
+			printf("\nV- pressed\n");
+			volumeDown();
+			printf("\nCurrent volume : %d\n", currentVolume);
+			drawVolumeBar(currentVolume);
+			break;
+		case KEYCODE_MUTE:
+			printf("\nMUTE pressed\n");
+			volumeMute();
+			currentVolume = 0;
+			printf("\nCurrent volume : %d\n", currentVolume);
+			drawVolumeBar(currentVolume);
 			break;
 		case KEYCODE_EXIT:
 			printf("\nExit pressed\n");
@@ -180,6 +207,7 @@ void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value)
 			printf("\nPress P+, P-, info or exit! \n\n");
 	}
 }
+
 
 void inputChannelNumber(uint16_t key)
 {
@@ -245,6 +273,7 @@ void registerCurrentTime(TimeStructure* timeStructure)
 	startTime.minutes = timeStructure->minutes;
 	startTime.seconds = timeStructure->seconds;
 	startTime.timeStampSeconds = timeStructure->timeStampSeconds;
+timeRecieved = true;
 }
 void printCurrentTime()
 {
@@ -261,4 +290,9 @@ void printCurrentTime()
 	startTime.seconds += timeElapsed - (timeElapsed % 3600)*3600 - (timeElapsed % 60)*60;*/
 
 	printf("\nCurrent time: %.2x:%.2x:%.2x\n", startTime.hours, startTime.minutes, startTime.seconds);
+}
+
+void registerCurrentVolume(uint8_t volumeValue)
+{
+	currentVolume = volumeValue;
 }

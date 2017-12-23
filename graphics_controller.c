@@ -8,10 +8,11 @@
 static IDirectFBSurface* primary = NULL;
 static IDirectFB* dfbInterface = NULL;
 static DFBSurfaceDescription surfaceDesc;
+static DFBFontDescription fontDesc;
+static IDirectFBFont* fontInterface = NULL;
 static int32_t screenWidth = 0;
 static int32_t screenHeight = 0;
 static uint8_t stopDrawing = 0;
-static bool graphicsChanged = false;
 
 static pthread_t gcThread;
 static DrawComponents componentsToDraw;
@@ -38,8 +39,12 @@ static void removeVolumeBar();
 static void removeInfo();
 static void renderThread();
 static void setTimerParams();
-static GraphicsControllerError wipeScreen();
+static void wipeScreen();
 
+static uint8_t hoursToDraw = 0;
+static uint8_t minutesToDraw = 0;
+static int16_t audioPidToDraw = 0;
+static int16_t videoPidToDraw = 0;
 
 /* helper macro for error checking */
 #define DFBCHECK(x...)                                      \
@@ -67,6 +72,7 @@ GraphicsControllerError graphicsControllerInit()
 	componentsToDraw.showProgramNumber = false;
 	componentsToDraw.showVolume = false;
 	componentsToDraw.showInfo = false;
+	componentsToDraw.showChannelDial = false;
 	componentsToDraw.programNumber = 0;
 	componentsToDraw.volume = 0;
 
@@ -95,6 +101,12 @@ GraphicsControllerError graphicsControllerInit()
 	{
 		return GC_ERROR;
 	}
+
+	fontDesc.flags = DFDESC_HEIGHT;
+	fontDesc.height = 40;
+
+	DFBCHECK(dfbInterface->CreateFont(dfbInterface, "/home/galois/fonts/DejaVuSans.ttf", &fontDesc, &fontInterface));
+	DFBCHECK(primary->SetFont(primary, fontInterface));
 
 	/* clear the screen before drawing anything */
 	wipeScreen();
@@ -137,44 +149,119 @@ GraphicsControllerError graphicsControllerDeinit()
 
 void renderThread()
 {
-	wipeScreen();
-
-
 	while (!stopDrawing)
 	{
+		wipeScreen();
+		
 		if (componentsToDraw.showProgramNumber)
 		{
-			
+			primary->SetColor(primary, 0x00, 0x00, 0xFF, 0xFF);
+    		primary->FillRectangle(primary, screenWidth/10, screenHeight/6, 3*screenWidth/10, 2*screenHeight/6);
 		}
 
 		if (componentsToDraw.showVolume)
 		{
+			/* draw image from file */
+			IDirectFBImageProvider *provider;
+			IDirectFBSurface *logoSurface = NULL;
+			int32_t logoHeight, logoWidth;
+
+    		/* create the image provider for the specified file */
+			switch (componentsToDraw.volume)
+			{
+				case 0:
+					DFBCHECK(dfbInterface->CreateImageProvider(dfbInterface, "volume_0.png", &provider));
+					break;
+				case 1:
+					DFBCHECK(dfbInterface->CreateImageProvider(dfbInterface, "volume_1.png", &provider));
+					break;
+				case 2:
+					DFBCHECK(dfbInterface->CreateImageProvider(dfbInterface, "volume_2.png", &provider));
+					break;
+				case 3:
+					DFBCHECK(dfbInterface->CreateImageProvider(dfbInterface, "volume_3.png", &provider));
+					break;
+				case 4:
+					DFBCHECK(dfbInterface->CreateImageProvider(dfbInterface, "volume_4.png", &provider));
+					break;
+				case 5:
+					DFBCHECK(dfbInterface->CreateImageProvider(dfbInterface, "volume_5.png", &provider));
+					break;
+				case 6:
+					DFBCHECK(dfbInterface->CreateImageProvider(dfbInterface, "volume_6.png", &provider));
+					break;
+				case 7:
+					DFBCHECK(dfbInterface->CreateImageProvider(dfbInterface, "volume_7.png", &provider));
+					break;
+				case 8:
+					DFBCHECK(dfbInterface->CreateImageProvider(dfbInterface, "volume_8.png", &provider));
+					break;
+				case 9:
+					DFBCHECK(dfbInterface->CreateImageProvider(dfbInterface, "volume_9.png", &provider));
+					break;
+				case 10:
+					DFBCHECK(dfbInterface->CreateImageProvider(dfbInterface, "volume_10.png", &provider));
+					break;
+			}
+
+    		/* get surface descriptor for the surface where the image will be rendered */
+			DFBCHECK(provider->GetSurfaceDescription(provider, &surfaceDesc));
+    		/* create the surface for the image */
+			DFBCHECK(dfbInterface->CreateSurface(dfbInterface, &surfaceDesc, &logoSurface));
+    		/* render the image to the surface */
+			DFBCHECK(provider->RenderTo(provider, logoSurface, NULL));
+	
+    		/* cleanup the provider after rendering the image to the surface */
+			provider->Release(provider);
+	
+    		/* fetch the logo size and add (blit) it to the screen */
+			DFBCHECK(logoSurface->GetSize(logoSurface, &logoWidth, &logoHeight));
+			DFBCHECK(primary->Blit(primary, logoSurface, NULL, screenWidth - logoWidth - 100, 50));
 		}
 
 		if (componentsToDraw.showInfo)
 		{
-			primary->SetColor(primary, 0xFF, 0x00, 0x00, 0xFF);
-    		primary->FillRectangle(primary, screenWidth/10, 3*screenHeight/4, 8*screenWidth/10, 18*screenHeight/20);
+			primary->SetColor(primary, 0x00, 0x66, 0x99, 0xEF);
+    		primary->FillRectangle(primary, screenWidth/10 - 20, 3*screenHeight/4 - 20, 8*screenWidth/10 + 40, screenHeight/5 + 40);
+			primary->SetColor(primary, 0xB3, 0xE6, 0xFF, 0xEF);
+    		primary->FillRectangle(primary, screenWidth/10, 3*screenHeight/4, 8*screenWidth/10, screenHeight/5);
+
+			char tempString[10];
+
+			DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0xFF));
+
+			sprintf(tempString, "Video PID : %d", videoPidToDraw);
+
+			DFBCHECK(primary->DrawString(primary, tempString, -1, screenWidth/9, 3*screenHeight/4 + 40, DSTF_LEFT));
+
+			sprintf(tempString, "Audio PID : %d", audioPidToDraw);
+
+			DFBCHECK(primary->DrawString(primary, tempString, -1, screenWidth/9, 3*screenHeight/4 + 80, DSTF_LEFT));
+
+			if (hoursToDraw == 30)
+			{
+				sprintf(tempString, "Time not available");
+			}
+			else
+			{
+				sprintf(tempString, "%.2d:%.2d", hoursToDraw, minutesToDraw);
+			}
+
+			DFBCHECK(primary->DrawString(primary, tempString, -1, screenWidth/9, screenHeight - 60, DSTF_LEFT));
 		}
 
+		if (componentsToDraw.showChannelDial)
+		{
+		}
 		DFBCHECK(primary->Flip(primary, NULL, 0));
 	}
 }
 
-GraphicsControllerError wipeScreen()
+void wipeScreen()
 {
-	/* clear the screen (draw black full screen rectangle) */
-    if (primary->SetColor(primary, 0x00, 0x00 ,0x00, 0x00))
-	{
-		return GC_ERROR;
-	}
-
-	if (primary->FillRectangle(primary, 0, 0, screenWidth, screenHeight))
-	{
-		return GC_ERROR;
-	}
-
-	return GC_NO_ERROR;
+    /* clear screen */
+    DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0x00));
+    DFBCHECK(primary->FillRectangle(primary, 0, 0, screenWidth, screenHeight));
 }
 
 void drawProgramNumber()
@@ -184,17 +271,22 @@ void drawProgramNumber()
 	componentsToDraw.showProgramNumber = true;
 }
 
-void drawVolumeBar()
+void drawVolumeBar(uint8_t volumeValue)
 {
-
+	componentsToDraw.volume = volumeValue;
 	timer_settime(volumeTimer, timerFlags, &volumeTimerSpec, &volumeTimerSpecOld);
 	componentsToDraw.showVolume = true;
 }
 
-void drawInfoRect()
+void drawInfoRect(uint8_t hours, uint8_t minutes, int16_t audioPid, int16_t videoPid)
 {
-	graphicsChanged = true;
 	timer_settime(infoTimer, timerFlags, &infoTimerSpec, &infoTimerSpecOld);
+
+	audioPidToDraw = audioPid;
+	videoPidToDraw = videoPid;
+	hoursToDraw = hours;
+	minutesToDraw = minutes;
+	
 	componentsToDraw.showInfo = true;
 }
 
@@ -209,7 +301,7 @@ void setTimerParams()
 
 	/*  */
 	memset(&programTimerSpec, 0, sizeof(programTimerSpec));
-	programTimerSpec.it_value.tv_sec = 2;
+	programTimerSpec.it_value.tv_sec = 4;
 	programTimerSpec.it_value.tv_nsec = 0;
 
 	/* Setting timer for volume bar */
@@ -221,7 +313,7 @@ void setTimerParams()
 
     /* */
 	memset(&volumeTimerSpec, 0, sizeof(volumeTimerSpec));
-	volumeTimerSpec.it_value.tv_sec = 2;
+	volumeTimerSpec.it_value.tv_sec = 3;
 	volumeTimerSpec.it_value.tv_nsec = 0;
 
 	/* Setting timer for info bar */
@@ -249,7 +341,10 @@ void removeVolumeBar()
 
 void removeInfo()
 {
-	printf("REMOVE INFO TIMER CALLBACK CALLED!\n");
 	componentsToDraw.showInfo = false;
 }
 
+void removeChannelDial()
+{
+	componentsToDraw.showChannelDial = false;
+}

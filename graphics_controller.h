@@ -22,6 +22,7 @@ typedef struct _DrawComponents
 	bool showProgramNumber;
 	bool showVolume;
 	bool showInfo;
+	bool showChannelDial;
 	int32_t programNumber;
 	int32_t volume;
 }DrawComponents;
@@ -53,13 +54,15 @@ void drawProgramNumber();
  *
  * @return graphics controller error code
  */
-void drawVolumeBar();
+void drawVolumeBar(uint8_t volumeValue);
 
 /**
  * @brief Deinitializes graphics controller module
  *
  * @return graphics controller error code
  */
-void drawInfoRect();
+void drawInfoRect(uint8_t hours, uint8_t minutes, int16_t audioPid, int16_t videoPid);
+
+void channelDial();
 
 #endif /* __GRAPHICS_CONTROLLER_H__ */

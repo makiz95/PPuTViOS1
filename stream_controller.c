@@ -21,7 +21,9 @@ static int16_t programNumber = 0;
 static ChannelInfo currentChannel;
 static bool isInitialized = false;
 static bool timeTablesRecieved = false;
+
 static TimeCallback timeRecievedCallback = NULL;
+static VolumeCallback volumeReportCallback = NULL;
 
 static struct timespec lockStatusWaitTime;
 static struct timeval now;
@@ -37,6 +39,9 @@ static StreamControllerError parseTimeTables();
 
 static InitialInfo configFile;
 static TimeStructure startTime;
+
+static uint32_t currentVolume = 5;
+static uint32_t volumeConstant = 160400000;
 
 StreamControllerError streamControllerInit()
 {
@@ -277,24 +282,25 @@ StreamControllerError parseTimeTables()
 
 	uint8_t offsetHours = totTable->descriptors[0].ltoInfo[0].localTimeOffsetHours;
 	uint8_t offsetMinutes = totTable->descriptors[0].ltoInfo[0].localTimeOffsetMinutes;
-	uint8_t offsetHoursFirstDigit = offsetHours >> 4;
-	uint8_t offsetHoursSecondDigit = offsetHours & 0x0F;
-	uint8_t offsetMinutesFirstDigit = offsetMinutes >> 4;
-	uint8_t offsetMinutesSecondDigit = offsetMinutes & 0x0F;
+	
+	/*startTime.hours = tdtTable->hours;
+	startTime.minutes = tdtTable->minutes;
+	startTime.seconds = tdtTable->seconds;
+	*/startTime.timeStampSeconds = tempTime.tv_sec;
 
 	if (totTable->descriptors[0].ltoInfo[0].localTimeOffsetPolarity == 0)
 	{
-		//startTime.hours = tdtTable->hours + 10*offsetHoursFirstDigit + offsetHoursSecondDigit;
-		//startTime.minutes = tdtTable->minutes + 10*offsetMinutesFirstDigit + offsetMinutesSecondDigit;
+		startTime.hours += offsetHours;
+		startTime.minutes += offsetMinutes;
 
-		if (startTime.hours > 0x17)
+		if (startTime.hours > 23)
 		{
-			startTime.hours -= 0x18;
+			startTime.hours -= 24;
 		}
 
-		if (startTime.minutes > 0x3B)
+		if (startTime.minutes > 59)
 		{
-			startTime.minutes -= 0x3C;
+			startTime.minutes -= 60;
 		}
 	}
 	else if (totTable->descriptors[0].ltoInfo[0].localTimeOffsetPolarity == 1)
@@ -318,14 +324,11 @@ StreamControllerError parseTimeTables()
 		}
 	}
 
-	//startTime.seconds = tdtTable->seconds;
-	startTime.timeStampSeconds = tempTime.tv_sec;
-
-	printf("TIME TABLE PARSED!\n");
 	timeRecievedCallback(&startTime);
 
 	timeTablesRecieved = true;
 }
+
 
 void* streamControllerTask()
 {
@@ -625,7 +628,6 @@ StreamControllerError loadConfigFile(char* filename, InitialInfo* configInfo)
 
 	return SC_NO_ERROR;
 }
-
 static void removeWhiteSpaces(char* word)
 {
 	int stringLen = strlen(word);
@@ -674,4 +676,59 @@ StreamControllerError registerTimeCallback(TimeCallback timeCallback)
 		timeRecievedCallback = timeCallback;
 		return SC_NO_ERROR;
 	}
+}
+
+StreamControllerError registerVolumeCallback(VolumeCallback volumeCallback)
+{
+	if (volumeCallback == NULL)
+	{
+		printf("Error registring volume callback!\n");
+		return SC_ERROR;
+	}
+	else
+	{
+		printf("Volume callback function registered!\n");
+		volumeReportCallback = volumeCallback;
+		return SC_NO_ERROR;
+	}
+}
+
+void volumeUp()
+{
+	if (++currentVolume > 10)
+	{
+		currentVolume = 10;
+	}
+
+	if (Player_Volume_Set(playerHandle, currentVolume*volumeConstant))
+	{
+		printf("\n%sError changing volume", __FUNCTION__);
+	}
+
+	volumeReportCallback(currentVolume);
+}
+
+void volumeDown()
+{
+	if (currentVolume > 0)
+	{
+		currentVolume--;
+	}
+
+	if (Player_Volume_Set(playerHandle, currentVolume*volumeConstant))
+	{
+		printf("\n%sError changing volume", __FUNCTION__);
+	}
+
+	volumeReportCallback(currentVolume);
+}
+
+void volumeMute()
+{
+	if (Player_Volume_Set(playerHandle, 0))
+	{
+		printf("\n%sError changing volume", __FUNCTION__);
+	}
+
+	currentVolume = 0;
 }
