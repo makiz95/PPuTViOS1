@@ -105,7 +105,7 @@ GraphicsControllerError graphicsControllerInit()
 	}
 
 	fontDesc.flags = DFDESC_HEIGHT;
-	fontDesc.height = 40;
+	fontDesc.height = 50;
 
 	DFBCHECK(dfbInterface->CreateFont(dfbInterface, "/home/galois/fonts/DejaVuSans.ttf", &fontDesc, &fontInterface));
 	DFBCHECK(primary->SetFont(primary, fontInterface));
@@ -218,14 +218,14 @@ void renderThread()
 	
     		/* fetch the logo size and add (blit) it to the screen */
 			DFBCHECK(logoSurface->GetSize(logoSurface, &logoWidth, &logoHeight));
-			DFBCHECK(primary->Blit(primary, logoSurface, NULL, screenWidth/5 - logoWidth - 100, 50));
+			DFBCHECK(primary->Blit(primary, logoSurface, NULL, screenWidth - logoWidth - 100, 350));
 		}
 
 		if (componentsToDraw.showInfo)
 		{
 			primary->SetColor(primary, 0x00, 0x66, 0x99, 0xEF);
 
-			primary->SetColor(primary, 0x59, 0xb7, 0x5e, 0xEF);
+			primary->SetColor(primary, 0xe0, 0x91, 0xd7, 0xEF);
     	primary->FillRectangle(primary, 3*screenWidth/10, 3*screenHeight/4, 4*screenWidth/10, screenHeight/5);
 
 			char tempString[10];
