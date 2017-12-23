@@ -64,6 +64,7 @@ int main(int argc, char *argv[])
 	timerSpec.it_value.tv_nsec = 0;
 
 	currentTime.hours = 30;
+	currentTime.Year = 1000;
 
 	/* load initial info from config.ini file */
 	if (loadInitialInfo())
@@ -127,7 +128,7 @@ void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value)
                 printf("**********************************************************\n");
             }
 			printCurrentTime();
-			drawInfoRect(currentTime.hours, currentTime.minutes, channelInfo.audioPid, channelInfo.videoPid);
+			drawInfoRect(currentTime.tmpMonth, currentTime.day, currentTime.Year, channelInfo.audioPid, channelInfo.videoPid);
 			break;
 		case KEYCODE_P_PLUS:
 			printf("\nCH+ pressed\n");
@@ -272,12 +273,15 @@ void registerCurrentTime(TimeStructure* timeStructure)
 	startTime.hours = timeStructure->hours;
 	startTime.minutes = timeStructure->minutes;
 	startTime.seconds = timeStructure->seconds;
+	startTime.Year = timeStructure->Year;
+	startTime.tmpMonth = timeStructure->tmpMonth;
+	startTime.day = timeStructure->day;
 	startTime.timeStampSeconds = timeStructure->timeStampSeconds;
 timeRecieved = true;
 }
 void printCurrentTime()
 {
-	/*struct timeval tempTime;
+	struct timeval tempTime;
 
 	gettimeofday(&tempTime, NULL);
 	time_t timeElapsed = tempTime.tv_sec - startTime.timeStampSeconds;
@@ -287,7 +291,7 @@ void printCurrentTime()
 
 	startTime.hours += timeElapsed % 3600;
 	startTime.minutes += timeElapsed % 60;
-	startTime.seconds += timeElapsed - (timeElapsed % 3600)*3600 - (timeElapsed % 60)*60;*/
+	startTime.seconds += timeElapsed - (timeElapsed % 3600)*3600 - (timeElapsed % 60)*60;
 
 	printf("\nCurrent time: %.2x:%.2x:%.2x\n", startTime.hours, startTime.minutes, startTime.seconds);
 }

@@ -54,6 +54,9 @@ typedef struct _TimeStructure
 	uint8_t hours;
 	uint8_t minutes;
 	uint8_t seconds;
+	uint16_t Year;
+	uint8_t tmpMonth;
+	uint8_t day;
 	time_t timeStampSeconds;
 }TimeStructure;
 

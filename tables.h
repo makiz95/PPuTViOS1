@@ -140,9 +140,9 @@ typedef struct _LocalTimeOffsetDescriptor
 	uint8_t sectionSyntaxIndicator;
 	uint16_t sectionLength;
 	uint16_t MJD;
-	uint8_t year;
+	/*uint8_t year;
 	uint8_t month;
-	uint8_t day;
+	uint8_t day;*/
 	uint16_t descriptorsLoopLength;
 	LocalTimeOffsetDescriptor descriptors[TABLES_MAX_NUMBER_OF_TOT_DESCRIPTORS];
 	uint8_t descriptorsCount;

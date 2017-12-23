@@ -40,9 +40,11 @@ static void removeInfo();
 static void renderThread();
 static void setTimerParams();
 static void wipeScreen();
-
-static uint8_t hoursToDraw = 0;
-static uint8_t minutesToDraw = 0;
+static uint8_t YearToDraw = 0;
+static uint8_t tmpMonthToDraw = 0;
+static uint8_t dayToDraw = 0;
+//static uint8_t hoursToDraw = 0;
+//static uint8_t minutesToDraw = 0;
 static int16_t audioPidToDraw = 0;
 static int16_t videoPidToDraw = 0;
 
@@ -238,14 +240,16 @@ void renderThread()
 
 			DFBCHECK(primary->DrawString(primary, tempString, -1, screenWidth/9, 3*screenHeight/4 + 80, DSTF_LEFT));
 
-			if (hoursToDraw == 30)
+			if (YearToDraw == 1000)
 			{
-				sprintf(tempString, "Time not available");
+				sprintf(tempString, "Date not available");
 			}
 			else
 			{
-				sprintf(tempString, "%.2d:%.2d", hoursToDraw, minutesToDraw);
+				sprintf(tempString, "%.2d/%.2d/%.4d", tmpMonthToDraw, dayToDraw, YearToDraw);
 			}
+
+
 
 			DFBCHECK(primary->DrawString(primary, tempString, -1, screenWidth/9, screenHeight - 60, DSTF_LEFT));
 		}
@@ -278,15 +282,19 @@ void drawVolumeBar(uint8_t volumeValue)
 	componentsToDraw.showVolume = true;
 }
 
-void drawInfoRect(uint8_t hours, uint8_t minutes, int16_t audioPid, int16_t videoPid)
+void drawInfoRect(uint8_t tmpMonth, uint8_t day, uint8_t Year, int16_t audioPid, int16_t videoPid)
 {
 	timer_settime(infoTimer, timerFlags, &infoTimerSpec, &infoTimerSpecOld);
 
 	audioPidToDraw = audioPid;
 	videoPidToDraw = videoPid;
-	hoursToDraw = hours;
+
+	YearToDraw = Year;
+	tmpMonthToDraw = tmpMonth;
+	dayToDraw = day;
+	/*hoursToDraw = hours;
 	minutesToDraw = minutes;
-	
+	*/
 	componentsToDraw.showInfo = true;
 }
 
