@@ -218,15 +218,15 @@ void renderThread()
 	
     		/* fetch the logo size and add (blit) it to the screen */
 			DFBCHECK(logoSurface->GetSize(logoSurface, &logoWidth, &logoHeight));
-			DFBCHECK(primary->Blit(primary, logoSurface, NULL, screenWidth - logoWidth - 100, 50));
+			DFBCHECK(primary->Blit(primary, logoSurface, NULL, screenWidth/5 - logoWidth - 100, 50));
 		}
 
 		if (componentsToDraw.showInfo)
 		{
 			primary->SetColor(primary, 0x00, 0x66, 0x99, 0xEF);
-    		primary->FillRectangle(primary, screenWidth/10 - 20, 3*screenHeight/4 - 20, 8*screenWidth/10 + 40, screenHeight/5 + 40);
-			primary->SetColor(primary, 0xB3, 0xE6, 0xFF, 0xEF);
-    		primary->FillRectangle(primary, screenWidth/10, 3*screenHeight/4, 8*screenWidth/10, screenHeight/5);
+
+			primary->SetColor(primary, 0x59, 0xb7, 0x5e, 0xEF);
+    	primary->FillRectangle(primary, 3*screenWidth/10, 3*screenHeight/4, 4*screenWidth/10, screenHeight/5);
 
 			char tempString[10];
 
@@ -234,11 +234,11 @@ void renderThread()
 
 			sprintf(tempString, "Video PID : %d", videoPidToDraw);
 
-			DFBCHECK(primary->DrawString(primary, tempString, -1, screenWidth/9, 3*screenHeight/4 + 40, DSTF_LEFT));
+			DFBCHECK(primary->DrawString(primary, tempString, -1, 3*screenWidth/9 - 50, 3*screenHeight/4 + 40, DSTF_LEFT));
 
 			sprintf(tempString, "Audio PID : %d", audioPidToDraw);
 
-			DFBCHECK(primary->DrawString(primary, tempString, -1, screenWidth/9, 3*screenHeight/4 + 80, DSTF_LEFT));
+			DFBCHECK(primary->DrawString(primary, tempString, -1, 3*screenWidth/9 - 50, 3*screenHeight/4 + 80, DSTF_LEFT));
 
 			if (YearToDraw == 1000)
 			{
@@ -246,12 +246,10 @@ void renderThread()
 			}
 			else
 			{
-				sprintf(tempString, "%.2d/%.2d/%.4d", tmpMonthToDraw, dayToDraw, YearToDraw);
+				sprintf(tempString, "Date: %.2d/%.2d/%.4d", tmpMonthToDraw, dayToDraw, YearToDraw);
 			}
 
-
-
-			DFBCHECK(primary->DrawString(primary, tempString, -1, screenWidth/9, screenHeight - 60, DSTF_LEFT));
+			DFBCHECK(primary->DrawString(primary, tempString, -1, 3*screenWidth/9 - 50, screenHeight - 60, DSTF_LEFT));
 		}
 
 		if (componentsToDraw.showChannelDial)
@@ -289,7 +287,7 @@ void drawInfoRect(uint8_t tmpMonth, uint8_t day, uint8_t Year, int16_t audioPid,
 	audioPidToDraw = audioPid;
 	videoPidToDraw = videoPid;
 
-	YearToDraw = Year;
+	YearToDraw =Year;
 	tmpMonthToDraw = tmpMonth;
 	dayToDraw = day;
 	/*hoursToDraw = hours;
