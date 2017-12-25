@@ -5,11 +5,11 @@
 
 static inline void textColor(int32_t attr, int32_t fg, int32_t bg)
 {
-   char command[13];
+	char command[13];
 
-   /* command is the control command to the terminal */
-   sprintf(command, "%c[%d;%d;%dm", 0x1B, attr, fg + 30, bg + 40);
-   printf("%s", command);
+	/* command is the control command to the terminal */
+	sprintf(command, "%c[%d;%d;%dm", 0x1B, attr, fg + 30, bg + 40);
+	printf("%s", command);
 }
 
 /* macro function for error checking */
@@ -27,7 +27,7 @@ void inputChannelNumber(uint16_t key);
 void changeChannel();
 void printCurrentTime();
 
-static void registerCurrentTime(TimeStructure* timeStructure);
+static void registerCurrentDate(CurrentDate* currentDate);
 static void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value);
 static void registerCurrentVolume(uint8_t volumeValue);
 static pthread_cond_t deinitCond = PTHREAD_COND_INITIALIZER;
@@ -43,7 +43,7 @@ static struct itimerspec timerSpecOld;
 static struct sigevent signalEvent;
 static int32_t timerFlags = 0;
 
-static TimeStructure startTime;
+static CurrentDate currentDateMain;
 static bool timeRecieved = false;
 TimeStructure currentTime;
 
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
     ERRORCHECK(registerRemoteControllerCallback(remoteControllerCallback));
 
 	/* register time callback */
-	ERRORCHECK(registerTimeCallback(registerCurrentTime));
+	ERRORCHECK(registerDateCallback(registerCurrentDate));
 
 	/* register volume callback */
 	ERRORCHECK(registerVolumeCallback(registerCurrentVolume));
@@ -98,7 +98,9 @@ int main(int argc, char *argv[])
 		printf("\n%s : ERROR Lock timeout exceeded!\n", __FUNCTION__);
 	}
 	pthread_mutex_unlock(&deinitMutex);
-    
+
+    /* deinitialize graphics controller module */
+    ERRORCHECK(graphicsControllerDeinit());
     
     /* unregister remote controller callback */
     ERRORCHECK(unregisterRemoteControllerCallback(remoteControllerCallback));
@@ -127,16 +129,15 @@ void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value)
                 printf("Video pid: %d\n", channelInfo.videoPid);
                 printf("**********************************************************\n");
             }
-			printCurrentTime();
-			drawInfoRect(currentTime.tmpMonth, currentTime.day, currentTime.Year, channelInfo.audioPid, channelInfo.videoPid);
+			drawInfoRect(currentDateMain.tmpMonth, currentDateMain.wday, currentDateMain.Year, channelInfo.audioPid, channelInfo.videoPid);
 			break;
 		case KEYCODE_P_PLUS:
-			printf("\nCH+ pressed\n");
+			printf("\nP+ pressed\n");
             channelUp();
 			drawProgramNumber();
 			break;
 		case KEYCODE_P_MINUS:
-		    printf("\nCH- pressed\n");
+		    printf("\nP- pressed\n");
             channelDown();
 			break;
 		case KEYCODE_V_PLUS:
@@ -209,6 +210,12 @@ void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value)
 	}
 }
 
+void registerCurrentDate(CurrentDate* currentDate)
+{
+	currentDateMain.Year = currentDate->Year;
+	currentDateMain.tmpMonth = currentDate->tmpMonth;
+	currentDateMain.wday = currentDate->wday;
+}
 
 void inputChannelNumber(uint16_t key)
 {
@@ -266,34 +273,6 @@ void changeChannel()
 	keys[0] = 0;
 	keys[1] = 0;
 	keys[2] = 0;
-}
-
-void registerCurrentTime(TimeStructure* timeStructure)
-{
-	startTime.hours = timeStructure->hours;
-	startTime.minutes = timeStructure->minutes;
-	startTime.seconds = timeStructure->seconds;
-	startTime.Year = timeStructure->Year;
-	startTime.tmpMonth = timeStructure->tmpMonth;
-	startTime.day = timeStructure->day;
-	startTime.timeStampSeconds = timeStructure->timeStampSeconds;
-timeRecieved = true;
-}
-void printCurrentTime()
-{
-	struct timeval tempTime;
-
-	gettimeofday(&tempTime, NULL);
-	time_t timeElapsed = tempTime.tv_sec - startTime.timeStampSeconds;
-
-	printf("seconds from epoch: %d\n", tempTime.tv_sec);
-	printf("start time seconds: %d\n", startTime.timeStampSeconds);
-
-	startTime.hours += timeElapsed % 3600;
-	startTime.minutes += timeElapsed % 60;
-	startTime.seconds += timeElapsed - (timeElapsed % 3600)*3600 - (timeElapsed % 60)*60;
-
-	printf("\nCurrent time: %.2x:%.2x:%.2x\n", startTime.hours, startTime.minutes, startTime.seconds);
 }
 
 void registerCurrentVolume(uint8_t volumeValue)

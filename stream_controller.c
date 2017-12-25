@@ -22,7 +22,7 @@ static ChannelInfo currentChannel;
 static bool isInitialized = false;
 static bool timeTablesRecieved = false;
 
-static TimeCallback timeRecievedCallback = NULL;
+static DateCallback dateRecievedCallback = NULL;
 static VolumeCallback volumeReportCallback = NULL;
 
 static struct timespec lockStatusWaitTime;
@@ -38,7 +38,7 @@ static StreamControllerError loadConfigFile(char* filename, InitialInfo* configI
 static StreamControllerError parseTimeTables();
 
 static InitialInfo configFile;
-static TimeStructure startTime;
+static CurrentDate currentDate;
 
 static uint32_t currentVolume = 5;
 static uint32_t volumeConstant = 160400000;
@@ -85,8 +85,8 @@ StreamControllerError streamControllerDeinit()
     Player_Deinit(playerHandle);
     
     /* deinitialize tuner device */
-    Tuner_Deinit();
-    
+    Tuner_Deinit();    
+
     /* free allocated memory */  
     free(patTable);
     free(pmtTable);
@@ -286,8 +286,8 @@ StreamControllerError parseTimeTables()
 	/*startTime.hours = tdtTable->hours;
 	startTime.minutes = tdtTable->minutes;
 	startTime.seconds = tdtTable->seconds;
-	*/startTime.timeStampSeconds = tempTime.tv_sec;
-
+	startTime.timeStampSeconds = tempTime.tv_sec;*/
+/*
 	if (totTable->descriptors[0].ltoInfo[0].localTimeOffsetPolarity == 0)
 	{
 		startTime.hours += offsetHours;
@@ -322,9 +322,12 @@ StreamControllerError parseTimeTables()
 		{
 			startTime.minutes -= offsetMinutes;
 		}
-	}
+	}*/
 
-	timeRecievedCallback(&startTime);
+	currentDate.Year = tdtTable->Year;
+	currentDate.tmpMonth = tdtTable->tmpMonth;
+	currentDate.wday = tdtTable->wday;
+	dateRecievedCallback(&currentDate);
 
 	timeTablesRecieved = true;
 }
@@ -491,7 +494,7 @@ int32_t sectionReceivedCallback(uint8_t *buffer)
     uint8_t tableId = *buffer;  
     if(tableId==0x00)
     {
-        //printf("\n%s -----PAT TABLE ARRIVED-----\n",__FUNCTION__);
+        printf("\n%s -----PAT TABLE ARRIVED-----\n",__FUNCTION__);
         
         if(parsePatTable(buffer,patTable)==TABLES_PARSE_OK)
         {
@@ -499,12 +502,11 @@ int32_t sectionReceivedCallback(uint8_t *buffer)
             pthread_mutex_lock(&demuxMutex);
 		    pthread_cond_signal(&demuxCond);
 		    pthread_mutex_unlock(&demuxMutex);
-            
         }
     } 
     else if (tableId==0x02)
     {
-        //printf("\n%s -----PMT TABLE ARRIVED-----\n",__FUNCTION__);
+        printf("\n%s -----PMT TABLE ARRIVED-----\n",__FUNCTION__);
         
         if(parsePmtTable(buffer,pmtTable)==TABLES_PARSE_OK)
         {
@@ -516,11 +518,11 @@ int32_t sectionReceivedCallback(uint8_t *buffer)
     }
 	else if (tableId == 0x70)
 	{
-		//printf("\n%s -----TDT TABLE ARRIVED-----\n",__FUNCTION__);
+		printf("\n%s -----TDT TABLE ARRIVED-----\n",__FUNCTION__);
 
 		if (parseTdtTable(buffer, tdtTable) == TABLES_PARSE_OK)
 		{
-			printTdtTable(tdtTable);
+			//printTdtTable(tdtTable);
 			pthread_mutex_lock(&demuxMutex);
 		    pthread_cond_signal(&demuxCond);
 		    pthread_mutex_unlock(&demuxMutex);
@@ -528,11 +530,11 @@ int32_t sectionReceivedCallback(uint8_t *buffer)
 	}
 	else if (tableId == 0x73)
 	{
-		//printf("\n%s -----TOT TABLE ARRIVED-----\n",__FUNCTION__);
+		printf("\n%s -----TOT TABLE ARRIVED-----\n",__FUNCTION__);
 
 		if (parseTotTable(buffer, totTable) == TABLES_PARSE_OK)
 		{
-			printTotTable(totTable);
+			//printTotTable(totTable);
 			pthread_mutex_lock(&demuxMutex);
 		    pthread_cond_signal(&demuxCond);
 		    pthread_mutex_unlock(&demuxMutex);
@@ -663,9 +665,9 @@ void changeChannelKey(int32_t channelNumber)
 	}
 }
 
-StreamControllerError registerTimeCallback(TimeCallback timeCallback)
+StreamControllerError registerDateCallback(DateCallback dateCallback)
 {
-	if (timeCallback == NULL)
+	if (dateCallback == NULL)
 	{
 		printf("Error registring time callback!\n");
 		return SC_ERROR;
@@ -673,7 +675,7 @@ StreamControllerError registerTimeCallback(TimeCallback timeCallback)
 	else
 	{
 		printf("Time callback function registered!\n");
-		timeRecievedCallback = timeCallback;
+		dateRecievedCallback = dateCallback;
 		return SC_NO_ERROR;
 	}
 }

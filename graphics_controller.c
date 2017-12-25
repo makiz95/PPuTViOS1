@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <time.h>
+#include "pthread.h"
 
 
 static IDirectFBSurface* primary = NULL;
@@ -15,6 +16,8 @@ static int32_t screenHeight = 0;
 static uint8_t stopDrawing = 0;
 
 static pthread_t gcThread;
+static pthread_mutex_t graphicsMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t graphicsCond = PTHREAD_COND_INITIALIZER;
 static DrawComponents componentsToDraw;
 
 static timer_t programNumberTimer;
@@ -37,16 +40,20 @@ static int32_t timerFlags = 0;
 static void removeProgramNumber();
 static void removeVolumeBar();
 static void removeInfo();
-static void renderThread();
+static void* renderThread();
 static void setTimerParams();
 static void wipeScreen();
-static uint8_t YearToDraw = 0;
+static uint16_t YearToDraw = 1000;
 static uint8_t tmpMonthToDraw = 0;
 static uint8_t dayToDraw = 0;
 //static uint8_t hoursToDraw = 0;
 //static uint8_t minutesToDraw = 0;
 static int16_t audioPidToDraw = 0;
 static int16_t videoPidToDraw = 0;
+static IDirectFBImageProvider *provider;
+static IDirectFBSurface *logoSurface = NULL;
+static int32_t logoHeight;
+static int32_t logoWidth;
 
 /* helper macro for error checking */
 #define DFBCHECK(x...)                                      \
@@ -105,24 +112,17 @@ GraphicsControllerError graphicsControllerInit()
 	}
 
 	fontDesc.flags = DFDESC_HEIGHT;
-	fontDesc.height = 50;
+	fontDesc.height = 40;
 
 	DFBCHECK(dfbInterface->CreateFont(dfbInterface, "/home/galois/fonts/DejaVuSans.ttf", &fontDesc, &fontInterface));
 	DFBCHECK(primary->SetFont(primary, fontInterface));
 
-	/* clear the screen before drawing anything */
-	wipeScreen();
 
 	if (pthread_create(&gcThread, NULL, &renderThread, NULL))
     {
         printf("Error creating input event task!\n");
         return GC_THREAD_ERROR;
     }
-	else
-	{
-		printf("Render thread created!\n");
-	}
-
 
 	return GC_NO_ERROR;
 }
@@ -130,6 +130,11 @@ GraphicsControllerError graphicsControllerInit()
 GraphicsControllerError graphicsControllerDeinit()
 {
 	stopDrawing = 1;
+
+	if (ETIMEDOUT == pthread_cond_wait(&graphicsCond, &graphicsMutex))
+	{
+		printf("Error neki koji god\n");
+	}
 
 	if (pthread_join(gcThread, NULL))
     {
@@ -145,29 +150,20 @@ GraphicsControllerError graphicsControllerDeinit()
 
 	primary->Release(primary);
 	dfbInterface->Release(dfbInterface);
-
 	return GC_NO_ERROR;
+
 }
 
-void renderThread()
+void* renderThread()
 {
+	char tempString[10];
+
 	while (!stopDrawing)
 	{
 		wipeScreen();
-		
-		if (componentsToDraw.showProgramNumber)
-		{
-			primary->SetColor(primary, 0x00, 0x00, 0xFF, 0xFF);
-    		primary->FillRectangle(primary, screenWidth/10, screenHeight/6, 3*screenWidth/10, 2*screenHeight/6);
-		}
 
 		if (componentsToDraw.showVolume)
 		{
-			/* draw image from file */
-			IDirectFBImageProvider *provider;
-			IDirectFBSurface *logoSurface = NULL;
-			int32_t logoHeight, logoWidth;
-
     		/* create the image provider for the specified file */
 			switch (componentsToDraw.volume)
 			{
@@ -218,17 +214,13 @@ void renderThread()
 	
     		/* fetch the logo size and add (blit) it to the screen */
 			DFBCHECK(logoSurface->GetSize(logoSurface, &logoWidth, &logoHeight));
-			DFBCHECK(primary->Blit(primary, logoSurface, NULL, screenWidth - logoWidth - 100, 350));
+			DFBCHECK(primary->Blit(primary, logoSurface, NULL, screenWidth/5 - logoWidth - 100, 50));
 		}
 
 		if (componentsToDraw.showInfo)
 		{
-			primary->SetColor(primary, 0x00, 0x66, 0x99, 0xEF);
-
-			primary->SetColor(primary, 0xe0, 0x91, 0xd7, 0xEF);
-    	primary->FillRectangle(primary, 3*screenWidth/10, 3*screenHeight/4, 4*screenWidth/10, screenHeight/5);
-
-			char tempString[10];
+			primary->SetColor(primary, 0x59, 0xb7, 0x5e, 0xEF);
+    		primary->FillRectangle(primary, 3*screenWidth/10, 3*screenHeight/4, 4*screenWidth/10, screenHeight/5);
 
 			DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0xFF));
 
@@ -240,13 +232,36 @@ void renderThread()
 
 			DFBCHECK(primary->DrawString(primary, tempString, -1, 3*screenWidth/9 - 50, 3*screenHeight/4 + 80, DSTF_LEFT));
 
-			if (YearToDraw == 1000)
+			if (YearToDraw == 0)
 			{
 				sprintf(tempString, "Date not available");
 			}
 			else
 			{
-				sprintf(tempString, "Date: %.2d/%.2d/%.4d", tmpMonthToDraw, dayToDraw, YearToDraw);
+				switch(dayToDraw)
+			   	{ 
+			 	case 1:
+			    		sprintf(tempString, "Monday/%.2d/%.4d", tmpMonthToDraw, YearToDraw);
+			 		  	break;
+			 	case 2:
+			    		sprintf(tempString, "Tuesday/%.2d/%.4d", tmpMonthToDraw, YearToDraw);
+			 		  	break;
+			 	case 3:
+			    		sprintf(tempString, "Wednesday/%.2d/%.4d", tmpMonthToDraw, YearToDraw);
+			 		  	break;
+			 	case 4:
+			    		sprintf(tempString, "Thursday/%.2d/%.4d", tmpMonthToDraw, YearToDraw);
+			 		  	break;
+			 	case 5:
+			    		sprintf(tempString, "Friday/%.2d/%.4d", tmpMonthToDraw, YearToDraw);
+			 		  	break;
+			 	case 6:
+			    		sprintf(tempString, "Saturday/%.2d/%.4d", tmpMonthToDraw, YearToDraw);
+			 		  	break;
+				case 7:
+			    		sprintf(tempString, "Sunday/%.2d/%.4d", tmpMonthToDraw, YearToDraw);
+			 		  	break;
+			 	}
 			}
 
 			DFBCHECK(primary->DrawString(primary, tempString, -1, 3*screenWidth/9 - 50, screenHeight - 60, DSTF_LEFT));
@@ -257,6 +272,10 @@ void renderThread()
 		}
 		DFBCHECK(primary->Flip(primary, NULL, 0));
 	}
+
+	pthread_mutex_lock(&graphicsMutex);
+	pthread_cond_signal(&graphicsCond);
+	pthread_mutex_unlock(&graphicsMutex);
 }
 
 void wipeScreen()
@@ -280,14 +299,14 @@ void drawVolumeBar(uint8_t volumeValue)
 	componentsToDraw.showVolume = true;
 }
 
-void drawInfoRect(uint8_t tmpMonth, uint8_t day, uint8_t Year, int16_t audioPid, int16_t videoPid)
+void drawInfoRect(uint8_t tmpMonth, uint8_t day, uint16_t Year, int16_t audioPid, int16_t videoPid)
 {
 	timer_settime(infoTimer, timerFlags, &infoTimerSpec, &infoTimerSpecOld);
 
 	audioPidToDraw = audioPid;
 	videoPidToDraw = videoPid;
 
-	YearToDraw =Year;
+	YearToDraw = Year;
 	tmpMonthToDraw = tmpMonth;
 	dayToDraw = day;
 	/*hoursToDraw = hours;

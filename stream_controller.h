@@ -60,10 +60,17 @@ typedef struct _TimeStructure
 	time_t timeStampSeconds;
 }TimeStructure;
 
+typedef struct _CurrentDate
+{
+	uint16_t Year;
+	uint8_t tmpMonth;
+	uint8_t wday;
+}CurrentDate;
+
 /**
  * @brief Time callback
  */
-typedef void(*TimeCallback)(TimeStructure* timeStructure);
+typedef void(*DateCallback)(CurrentDate* currentDate);
 
 /*
  * @brief Registers time callback
@@ -71,7 +78,7 @@ typedef void(*TimeCallback)(TimeStructure* timeStructure);
  * @param  [in] time callback - pointer to time callback function
  * @return Stream controller error code
  */
-StreamControllerError registerTimeCallback(TimeCallback timeCallback);
+StreamControllerError registerDateCallback(DateCallback dateCallback);
 /**
  * @brief Volume value callback
  */
