@@ -206,7 +206,15 @@ void startChannel(int32_t channelNumber)
             printf("\n%s : ERROR Cannot create video stream\n", __FUNCTION__);
             streamControllerDeinit();
         }
-    }
+}
+	else
+	{
+	Player_Stream_Remove(playerHandle, sourceHandle, streamHandleV);
+            streamHandleV = 0;
+	   MV_PE_ClearScreen(playerHandle,1);
+	
+	}
+    
 
     if (audioPid != -1)
     {   
