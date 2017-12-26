@@ -64,7 +64,7 @@ typedef struct _CurrentDate
 {
 	uint16_t Year;
 	uint8_t tmpMonth;
-	uint8_t wday;
+	uint8_t day;
 }CurrentDate;
 
 /**

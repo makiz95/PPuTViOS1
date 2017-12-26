@@ -339,7 +339,7 @@ ParseErrorCode parseTdtTable(const uint8_t* tdtSectionBuffer, TdtTable* tdtTable
     tdtTable->day = tdtTable->MJD - 14987 - (int) (tdtTable->tmpYear * 365.25)  - (int) (tdtTable->tmpMonth * 30.6001);
 	tdtTable->Year = tdtTable->tmpYear+1900;
 
-	tdtTable->wday = ((tdtTable->MJD + 2) % 7) + 1;
+	
 
 	return TABLES_PARSE_OK;
 }
@@ -357,31 +357,45 @@ ParseErrorCode printTdtTable(TdtTable* tdtTable)
     printf("section_length           |      %d\n", tdtTable->sectionLength);
 	printf("MJD code                 |      %d\n", tdtTable->MJD);
 	
-switch(tdtTable->wday)
-   { 
- 	case 1:
-		 printf("INFO: Time read from stream: Monday/%hu/%hu \n", tdtTable->tmpMonth, tdtTable->Year);
- 		  break;
- 	case 2:
-		 printf("INFO: Time read from stream: Tuesday/%hu/%hu \n", tdtTable->tmpMonth, tdtTable->Year);
- 		  break;
- 	case 3:
-		 printf("INFO: Time read from stream: Wednesday/%hu/%hu \n", tdtTable->tmpMonth, tdtTable->Year);
- 		  break;
- 	case 4:
-		 printf("INFO: Time read from stream: Thursday/%hu/%hu \n", tdtTable->tmpMonth, tdtTable->Year);
- 		  break;
- 	case 5:
-		 printf("INFO: Time read from stream: Friday/%hu/%hu \n", tdtTable->tmpMonth, tdtTable->Year);
- 		  break;
- 	case 6:
-		 printf("INFO: Time read from stream: Saturday/%hu/%hu \n", tdtTable->tmpMonth, tdtTable->Year);
- 		  break;
+switch(tdtTable->tmpMonth)
+  { 
+	case 1:
+		 printf("INFO: Time read from stream: January/%hu/%hu \n", tdtTable->day, tdtTable->Year);
+		  break;
+	case 2:
+		   printf("INFO: Time read from stream: February/%hu/%hu \n", tdtTable->day, tdtTable->Year);
+		  break;
+	case 3:
+		  printf("INFO: Time read from stream: March/%hu/%hu \n", tdtTable->day, tdtTable->Year);
+		  break;
+	case 4:
+		  printf("INFO: Time read from stream: April/%hu/%hu \n", tdtTable->day, tdtTable->Year);;
+		  break;
+	case 5:
+		 printf("INFO: Time read from stream: May/%hu/%hu \n", tdtTable->day, tdtTable->Year);
+		  break;
+	case 6:
+		  printf("INFO: Time read from stream: June/%hu/%hu \n", tdtTable->day, tdtTable->Year);
+		  break;
 	case 7:
-		 printf("INFO: Time read from stream: Sunday/%hu/%hu \n", tdtTable->tmpMonth, tdtTable->Year);
- 		  break;
-
- 	}
+		 printf("INFO: Time read from stream: July/%hu/%hu \n", tdtTable->day, tdtTable->Year);
+		  break;
+	case 8:
+		   printf("INFO: Time read from stream: August/%hu/%hu \n", tdtTable->day, tdtTable->Year);
+		  break;
+	case 9:
+		  printf("INFO: Time read from stream: September/%hu/%hu \n", tdtTable->day, tdtTable->Year);
+		  break;
+	case 10:
+		  printf("INFO: Time read from stream: October/%hu/%hu \n", tdtTable->day, tdtTable->Year);
+		  break;
+	case 11:
+		   printf("INFO: Time read from stream: November/%hu/%hu \n", tdtTable->day, tdtTable->Year);;
+		  break;
+	case 12:
+		   printf("INFO: Time read from stream: December/%hu/%hu \n", tdtTable->day, tdtTable->Year);
+		  break;
+	}
      printf("\n********************TDT TABLE SECTION********************\n");
 
 	return TABLES_PARSE_OK;

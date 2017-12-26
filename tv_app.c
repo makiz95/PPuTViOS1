@@ -129,7 +129,7 @@ void remoteControllerCallback(uint16_t code, uint16_t type, uint32_t value)
                 printf("Video pid: %d\n", channelInfo.videoPid);
                 printf("**********************************************************\n");
             }
-			drawInfoRect(currentDateMain.tmpMonth, currentDateMain.wday, currentDateMain.Year, channelInfo.audioPid, channelInfo.videoPid);
+			drawInfoRect(currentDateMain.tmpMonth, currentDateMain.day, currentDateMain.Year, channelInfo.audioPid, channelInfo.videoPid);
 			break;
 		case KEYCODE_P_PLUS:
 			printf("\nP+ pressed\n");
@@ -214,7 +214,7 @@ void registerCurrentDate(CurrentDate* currentDate)
 {
 	currentDateMain.Year = currentDate->Year;
 	currentDateMain.tmpMonth = currentDate->tmpMonth;
-	currentDateMain.wday = currentDate->wday;
+	currentDateMain.day = currentDate->day;
 }
 
 void inputChannelNumber(uint16_t key)

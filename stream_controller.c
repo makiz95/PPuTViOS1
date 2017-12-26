@@ -326,7 +326,7 @@ StreamControllerError parseTimeTables()
 
 	currentDate.Year = tdtTable->Year;
 	currentDate.tmpMonth = tdtTable->tmpMonth;
-	currentDate.wday = tdtTable->wday;
+	currentDate.day = tdtTable->day;
 	dateRecievedCallback(&currentDate);
 
 	timeTablesRecieved = true;
@@ -522,7 +522,7 @@ int32_t sectionReceivedCallback(uint8_t *buffer)
 
 		if (parseTdtTable(buffer, tdtTable) == TABLES_PARSE_OK)
 		{
-			//printTdtTable(tdtTable);
+			printTdtTable(tdtTable);
 			pthread_mutex_lock(&demuxMutex);
 		    pthread_cond_signal(&demuxCond);
 		    pthread_mutex_unlock(&demuxMutex);
@@ -534,7 +534,7 @@ int32_t sectionReceivedCallback(uint8_t *buffer)
 
 		if (parseTotTable(buffer, totTable) == TABLES_PARSE_OK)
 		{
-			//printTotTable(totTable);
+			printTotTable(totTable);
 			pthread_mutex_lock(&demuxMutex);
 		    pthread_cond_signal(&demuxCond);
 		    pthread_mutex_unlock(&demuxMutex);

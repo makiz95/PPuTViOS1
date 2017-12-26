@@ -103,7 +103,6 @@ typedef struct _TdtTable
 	uint16_t Year;
 	uint16_t tmpMonth;
 	uint16_t day;
-	uint16_t wday;
 	uint8_t K;
 }TdtTable;
 

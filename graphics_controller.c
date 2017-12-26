@@ -112,7 +112,7 @@ GraphicsControllerError graphicsControllerInit()
 	}
 
 	fontDesc.flags = DFDESC_HEIGHT;
-	fontDesc.height = 40;
+	fontDesc.height = 50;
 
 	DFBCHECK(dfbInterface->CreateFont(dfbInterface, "/home/galois/fonts/DejaVuSans.ttf", &fontDesc, &fontInterface));
 	DFBCHECK(primary->SetFont(primary, fontInterface));
@@ -214,12 +214,12 @@ void* renderThread()
 	
     		/* fetch the logo size and add (blit) it to the screen */
 			DFBCHECK(logoSurface->GetSize(logoSurface, &logoWidth, &logoHeight));
-			DFBCHECK(primary->Blit(primary, logoSurface, NULL, screenWidth/5 - logoWidth - 100, 50));
+		DFBCHECK(primary->Blit(primary, logoSurface, NULL, screenWidth - logoWidth - 100, 350));
 		}
 
 		if (componentsToDraw.showInfo)
 		{
-			primary->SetColor(primary, 0x59, 0xb7, 0x5e, 0xEF);
+			primary->SetColor(primary, 0xe0, 0x91, 0xd7, 0xEF);
     		primary->FillRectangle(primary, 3*screenWidth/10, 3*screenHeight/4, 4*screenWidth/10, screenHeight/5);
 
 			DFBCHECK(primary->SetColor(primary, 0x00, 0x00, 0x00, 0xFF));
@@ -238,28 +238,43 @@ void* renderThread()
 			}
 			else
 			{
-				switch(dayToDraw)
+				switch(tmpMonthToDraw)
 			   	{ 
 			 	case 1:
-			    		sprintf(tempString, "Monday/%.2d/%.4d", tmpMonthToDraw, YearToDraw);
+			    		sprintf(tempString, "January/%.2d/%.4d", dayToDraw, YearToDraw);
 			 		  	break;
 			 	case 2:
-			    		sprintf(tempString, "Tuesday/%.2d/%.4d", tmpMonthToDraw, YearToDraw);
+			    		sprintf(tempString, "February/%.2d/%.4d", dayToDraw, YearToDraw);
 			 		  	break;
 			 	case 3:
-			    		sprintf(tempString, "Wednesday/%.2d/%.4d", tmpMonthToDraw, YearToDraw);
+			    		sprintf(tempString, "March/%.2d/%.4d", dayToDraw, YearToDraw);
 			 		  	break;
 			 	case 4:
-			    		sprintf(tempString, "Thursday/%.2d/%.4d", tmpMonthToDraw, YearToDraw);
+			    		sprintf(tempString, "April/%.2d/%.4d", dayToDraw, YearToDraw);
 			 		  	break;
 			 	case 5:
-			    		sprintf(tempString, "Friday/%.2d/%.4d", tmpMonthToDraw, YearToDraw);
+			    		sprintf(tempString, "May/%.2d/%.4d", dayToDraw, YearToDraw);
 			 		  	break;
 			 	case 6:
-			    		sprintf(tempString, "Saturday/%.2d/%.4d", tmpMonthToDraw, YearToDraw);
+			    		sprintf(tempString, "June/%.2d/%.4d", dayToDraw, YearToDraw);
 			 		  	break;
 				case 7:
-			    		sprintf(tempString, "Sunday/%.2d/%.4d", tmpMonthToDraw, YearToDraw);
+			    		sprintf(tempString, "July/%.2d/%.4d", dayToDraw, YearToDraw);
+			 		  	break;
+				case 8:
+			    		sprintf(tempString, "August/%.2d/%.4d", dayToDraw, YearToDraw);
+			 		  	break;
+				case 9:
+			    		sprintf(tempString, "September/%.2d/%.4d", dayToDraw, YearToDraw);
+			 		  	break;
+				case 10:
+			    		sprintf(tempString, "October/%.2d/%.4d", dayToDraw, YearToDraw);
+			 		  	break;
+				case 11:
+			    		sprintf(tempString, "November/%.2d/%.4d", dayToDraw, YearToDraw);
+			 		  	break;
+				case 12:
+			    		sprintf(tempString, "December/%.2d/%.4d", dayToDraw, YearToDraw);
 			 		  	break;
 			 	}
 			}
